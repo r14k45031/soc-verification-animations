@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Formal Modeling — 原理直覺講解</title>
+<style>
+:root {
+  --bg:#ffffff;--bg2:#f5f5f4;--bg3:#e8e6e1;
+  --text:#1a1a18;--text2:#57564f;--text3:#8a8880;
+  --blue-bg:#e6f1fb;--blue-text:#0c447c;--blue-border:#185fa5;
+  --green-bg:#e1f5ee;--green-text:#085041;--green-border:#0f6e56;
+  --amber-bg:#faeeda;--amber-text:#633806;--amber-border:#854f0b;
+  --purple-bg:#eeedfe;--purple-text:#3c3489;--purple-border:#534ab7;
+  --ok-bg:#eaf3de;--ok-text:#27500a;--ok-border:#3b6d11;
+  --warn-bg:#faeeda;--warn-text:#633806;--warn-border:#854f0b;
+  --danger-bg:#fcebeb;--danger-text:#791f1f;--danger-border:#a32d2d;
+  --radius:10px;--radius-sm:6px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
+.header{background:var(--bg2);border-bottom:1px solid var(--bg3);padding:1rem 1.5rem}
+.header h1{font-size:18px;font-weight:600}
+.header p{font-size:13px;color:var(--text2);margin-top:2px}
+.tabs{display:flex;gap:4px;flex-wrap:wrap;padding:.75rem 1.5rem;background:var(--bg2);border-bottom:1px solid var(--bg3)}
+.tab{padding:5px 14px;border-radius:20px;border:1px solid transparent;font-size:13px;cursor:pointer;background:transparent;color:var(--text2);transition:all .15s;white-space:nowrap}
+.tab:hover{background:var(--bg3)}
+.tab.on{background:var(--purple-bg);color:var(--purple-text);border-color:var(--purple-border);font-weight:500}
+.content{padding:1.5rem;max-width:860px;margin:0 auto}
+.slide{display:none}.slide.on{display:block}
+h2{font-size:20px;font-weight:600;margin-bottom:.5rem}
+h3{font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin:1.2rem 0 .5rem}
+p{font-size:14px;line-height:1.75;color:var(--text);margin-bottom:.65rem}
+.why{font-size:14px;color:var(--purple-text);background:var(--purple-bg);border-left:3px solid var(--purple-border);padding:.6rem 1rem;border-radius:0 var(--radius-sm) var(--radius-sm) 0;margin-bottom:1rem}
+.card{background:var(--bg2);border-radius:var(--radius);padding:.9rem 1.1rem;margin-bottom:.9rem;border:1px solid var(--bg3)}
+.card-ok{background:var(--ok-bg);border:1px solid var(--ok-border);border-radius:var(--radius);padding:.75rem 1rem;margin-bottom:.75rem}
+.card-ok p{color:var(--ok-text);font-size:13px;margin:0}
+.card-warn{background:var(--warn-bg);border:1px solid var(--warn-border);border-radius:var(--radius);padding:.75rem 1rem;margin-bottom:.75rem}
+.card-warn p{color:var(--warn-text);font-size:13px;margin:0}
+.card-danger{background:var(--danger-bg);border:1px solid var(--danger-border);border-radius:var(--radius);padding:.75rem 1rem;margin-bottom:.75rem}
+.card-danger p{color:var(--danger-text);font-size:13px;margin:0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:.9rem}
+code{font-family:'SF Mono',Consolas,monospace;font-size:12px;background:var(--bg2);padding:1px 5px;border-radius:4px;border:1px solid var(--bg3)}
+.formula{font-family:'SF Mono',Consolas,monospace;font-size:13px;background:var(--bg2);border-left:3px solid var(--purple-border);padding:.5rem .9rem;border-radius:0 var(--radius-sm) var(--radius-sm) 0;margin:.6rem 0;color:var(--text);border:1px solid var(--bg3);border-left-width:3px}
+ul{padding-left:1.2rem;margin-bottom:.6rem}
+li{font-size:14px;line-height:1.75;color:var(--text)}
+.ctrl{display:flex;gap:8px;align-items:center;margin:.5rem 0;flex-wrap:wrap}
+.btn{padding:5px 14px;border-radius:20px;border:1px solid var(--bg3);font-size:12px;cursor:pointer;background:var(--bg);color:var(--text2);transition:all .15s}
+.btn:hover{background:var(--bg2)}
+.btn.on{background:var(--purple-bg);color:var(--purple-text);border-color:var(--purple-border);font-weight:500}
+table.t{width:100%;border-collapse:collapse;font-size:13px;margin:.6rem 0}
+table.t th{text-align:left;padding:6px 8px;color:var(--text2);font-weight:600;border-bottom:1px solid var(--bg3)}
+table.t td{padding:6px 8px;border-bottom:1px solid var(--bg3);color:var(--text)}
+.badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:500}
+.b-ok{background:var(--ok-bg);color:var(--ok-text)}
+.b-danger{background:var(--danger-bg);color:var(--danger-text)}
+svg.demo{width:100%;border-radius:var(--radius);background:var(--bg2);margin:.75rem 0;border:1px solid var(--bg3);display:block}
+@keyframes pop{0%{transform:scale(.7);opacity:0}60%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+@keyframes fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.pop{animation:pop .4s ease both}
+.fi{animation:fadein .4s ease both}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🔬 Formal Modeling — 原理直覺講解（Why it works）</h1>
+  <p>SoC Verification｜從「為什麼」的角度深入理解每個設計決策</p>
+</div>
+<div class="tabs">
+  <button class="tab on" onclick="go(0)">① Kripke 建模原理</button>
+  <button class="tab" onclick="go(1)">② 時序邏輯原理</button>
+  <button class="tab" onclick="go(2)">③ Safety vs Liveness</button>
+  <button class="tab" onclick="go(3)">④ Explicit vs Symbolic</button>
+</div>
+
+<div class="content">
+
+<!-- ① Kripke 原理 -->
+<div class="slide on" id="s0">
+  <h2>① Kripke Structure — 為什麼要這樣建模？</h2>
+  <div class="why">核心問題：一個硬體電路有那麼多行為，要怎麼讓電腦「看得懂」並加以驗證？</div>
+  <p>驗證的本質是：<em>對系統所有可能的執行，確認某個性質永遠成立</em>。但「所有可能的執行」要怎麼表達？答案就是 Kripke Structure。</p>
+  <p style="font-weight:600">直覺：把電路想像成一張地圖</p>
+  <p>電路在任何時刻都有一個「當前狀態」（所有暫存器的值）。時脈到來時，電路根據當前狀態與輸入，跳到下一個狀態。這整個過程就是一張有方向的地圖——Kripke Structure。</p>
+  <svg class="demo" viewBox="0 0 640 240">
+    <defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+    <rect x="20" y="80" width="140" height="90" rx="10" fill="#e6f1fb" stroke="#185fa5" stroke-width="1" class="pop" style="animation-delay:.05s"/>
+    <text x="90" y="113" text-anchor="middle" font-size="13" fill="#0c447c" font-weight="600">電路</text>
+    <text x="90" y="130" text-anchor="middle" font-size="11" fill="#185fa5">n 個暫存器</text>
+    <text x="90" y="147" text-anchor="middle" font-size="11" fill="#185fa5">→ 2ⁿ 個狀態</text>
+    <path d="M160 125 Q190 125 210 125" fill="none" stroke="#185fa5" stroke-width="1.5" marker-end="url(#ar)" class="fi" style="animation-delay:.3s"/>
+    <text x="185" y="118" text-anchor="middle" font-size="10" fill="#185fa5" class="fi" style="animation-delay:.3s">建模</text>
+    <g class="pop" style="animation-delay:.4s">
+      <circle cx="290" cy="80" r="34" fill="#e6f1fb" stroke="#185fa5" stroke-width="1.5"/>
+      <text x="290" y="74" text-anchor="middle" font-size="12" fill="#0c447c" font-weight="600">s₀</text>
+      <text x="290" y="91" text-anchor="middle" font-size="10" fill="#185fa5">{a, b}</text>
+      <path d="M265 46 L272 60" fill="none" stroke="#185fa5" stroke-width="2" marker-end="url(#ar)"/>
+    </g>
+    <g class="pop" style="animation-delay:.55s">
+      <circle cx="210" cy="185" r="34" fill="#e1f5ee" stroke="#0f6e56" stroke-width="1.5"/>
+      <text x="210" y="179" text-anchor="middle" font-size="12" fill="#085041" font-weight="600">s₁</text>
+      <text x="210" y="196" text-anchor="middle" font-size="10" fill="#0f6e56">{b, c}</text>
+    </g>
+    <g class="pop" style="animation-delay:.7s">
+      <circle cx="370" cy="185" r="34" fill="#faeeda" stroke="#854f0b" stroke-width="1.5"/>
+      <text x="370" y="179" text-anchor="middle" font-size="12" fill="#633806" font-weight="600">s₂</text>
+      <text x="370" y="196" text-anchor="middle" font-size="10" fill="#854f0b">{c}</text>
+    </g>
+    <line x1="262" y1="106" x2="232" y2="155" stroke="#185fa5" stroke-width="1.2" marker-end="url(#ar)" class="fi" style="animation-delay:.8s"/>
+    <line x1="316" y1="106" x2="344" y2="155" stroke="#185fa5" stroke-width="1.2" marker-end="url(#ar)" class="fi" style="animation-delay:.85s"/>
+    <line x1="244" y1="185" x2="336" y2="185" stroke="#0f6e56" stroke-width="1.2" marker-end="url(#ar)" class="fi" style="animation-delay:.9s"/>
+    <path d="M390 155 Q420 150 408 185 Q398 215 378 215" fill="none" stroke="#854f0b" stroke-width="1.2" marker-end="url(#ar)" class="fi" style="animation-delay:.95s"/>
+    <rect x="440" y="55" width="185" height="155" rx="8" fill="#eeedfe" stroke="#534ab7" stroke-width="1" class="fi" style="animation-delay:1s"/>
+    <text x="532" y="78" text-anchor="middle" font-size="12" fill="#3c3489" font-weight="600" class="fi" style="animation-delay:1s">為什麼要 L: S → 2^AP？</text>
+    <text x="532" y="98" text-anchor="middle" font-size="11" fill="#534ab7" class="fi" style="animation-delay:1.1s">驗證器不在乎狀態的</text>
+    <text x="532" y="114" text-anchor="middle" font-size="11" fill="#534ab7" class="fi" style="animation-delay:1.1s">具體名字，只在乎</text>
+    <text x="532" y="130" text-anchor="middle" font-size="11" fill="#534ab7" class="fi" style="animation-delay:1.2s">「此狀態下哪些命題成立」</text>
+    <text x="532" y="154" text-anchor="middle" font-size="11" fill="#3c3489" font-weight="600" class="fi" style="animation-delay:1.3s">R 必須 Total（全射）</text>
+    <text x="532" y="170" text-anchor="middle" font-size="11" fill="#534ab7" class="fi" style="animation-delay:1.3s">→ 系統永不停止</text>
+    <text x="532" y="186" text-anchor="middle" font-size="11" fill="#534ab7" class="fi" style="animation-delay:1.3s">→ 可驗證「無限執行」</text>
+    <text x="290" y="232" text-anchor="middle" font-size="11" fill="#8a8880" class="fi" style="animation-delay:1.4s">狀態=暫存器組合　轉移=時脈驅動　標記=性質在哪些狀態成立</text>
+  </svg>
+  <div class="grid2">
+    <div class="card">
+      <p style="font-weight:600;margin-bottom:.3rem">為什麼不直接用 RTL code？</p>
+      <p style="font-size:13px;color:var(--text2)">RTL 有語法、時序細節、不同語言寫法。Kripke Structure 是語言無關的數學抽象，讓所有驗證算法都建立在同一基礎上。</p>
+    </div>
+    <div class="card">
+      <p style="font-weight:600;margin-bottom:.3rem">為什麼 R 必須是 Total（全射）？</p>
+      <p style="font-size:13px;color:var(--text2)">若某狀態沒有後繼，系統就「卡死」了（deadlock）。要讓「無限執行」有意義，每個狀態都必須能繼續運行，即使是自我回路也算。</p>
+    </div>
+  </div>
+  <div class="card-ok"><p>一句話記住：Kripke Structure 就是「有標記的無限狀態轉移圖」。標記告訴驗證器每個狀態有什麼性質，讓它能問「在所有可達狀態中，p 永遠成立嗎？」</p></div>
+</div>
+
+<!-- ② 時序邏輯原理 -->
+<div class="slide" id="s1">
+  <h2>② 時序邏輯 — 為什麼需要「兩層」量詞？</h2>
+  <div class="why">核心問題：一般邏輯（AND/OR/NOT）只能描述「此刻」的性質，但硬體需要描述「跨時間」的行為，怎麼辦？</div>
+  <p>考慮 arbiter 電路：「req 進來之後，ack 最終一定會出現」。普通布林邏輯完全無法表達——它只能描述單一時間點的組合邏輯關係。我們需要能描述「隨時間演進的行為」的語言。</p>
+  <p style="font-weight:600">為什麼需要「兩層」量詞（Path + State）？</p>
+  <div class="ctrl">
+    <span style="font-size:13px;color:var(--text2)">選一個範例：</span>
+    <button class="btn on" id="ex-agefp" onclick="showEx('agefp')">AG(EF p)</button>
+    <button class="btn" id="ex-agafp" onclick="showEx('agafp')">AG(AF p)</button>
+    <button class="btn" id="ex-efgp" onclick="showEx('efgp')">EF(G p)</button>
+    <button class="btn" id="ex-agpq" onclick="showEx('agpq')">AG(p⇒EF q)</button>
+  </div>
+  <svg class="demo" viewBox="0 0 640 210" id="ctl-svg">
+    <defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+    <g id="ctl-tree"></g>
+    <text id="ctl-formula" x="320" y="26" text-anchor="middle" font-size="15" fill="#3c3489" font-weight="600"></text>
+    <text id="ctl-meaning" x="320" y="200" text-anchor="middle" font-size="12" fill="#8a8880"></text>
+  </svg>
+  <div id="ctl-explain" class="card" style="font-size:13px;line-height:1.7"></div>
+  <div class="grid2">
+    <div class="card">
+      <p style="font-weight:600;margin-bottom:.3rem">CTL* → CTL：為什麼要限制？</p>
+      <p style="font-size:13px;color:var(--text2)">CTL* 表達力最強但工具開發困難。CTL 要求每個 state quantifier 前必須有 A/E，犧牲少量表達力，換來<em>多項式時間</em>的驗證算法。</p>
+    </div>
+    <div class="card">
+      <p style="font-weight:600;margin-bottom:.3rem">CTL vs LTL 本質差異</p>
+      <p style="font-size:13px;color:var(--text2)">CTL 是 branching-time（計算樹），可混合 A/E。LTL 是 linear-time（單一路徑），只有一層路徑前綴。兩者不互相包含。</p>
+    </div>
+  </div>
+  <div class="card-ok"><p>兩層量詞的直覺：「Path quantifier（A/E）」選擇看哪些路徑，「State quantifier（G/F/X/U）」在選定的路徑上描述時間行為。少了任何一層，都無法完整表達並行系統的時序性質。</p></div>
+</div>
+
+<!-- ③ Safety vs Liveness -->
+<div class="slide" id="s2">
+  <h2>③ Safety vs Liveness — 本質差異在哪裡？</h2>
+  <div class="why">核心問題：都是「性質」，Safety 和 Liveness 為什麼驗證方式完全不同？</div>
+  <p style="font-weight:600">從「如何被違反」來理解本質差異</p>
+  <p>Safety 和 Liveness 的根本區別不在於「說了什麼」，而在於<em>「反例（counterexample）長什麼樣子」</em>。</p>
+  <div class="ctrl">
+    <button class="btn on" id="btn-safe" onclick="showSL('safe')">Safety 反例</button>
+    <button class="btn" id="btn-live" onclick="showSL('live')">Liveness 反例</button>
+    <button class="btn" id="btn-cmp" onclick="showSL('cmp')">對比</button>
+  </div>
+  <svg class="demo" viewBox="0 0 640 200" id="sl-svg"><g id="sl-g"></g></svg>
+  <div id="sl-exp" class="card" style="font-size:13px;line-height:1.7"></div>
+  <p style="font-weight:600;margin-top:.5rem">為什麼 Liveness 不能用模擬來驗證？</p>
+  <p>Safety 被違反 → 在某個有限時間點 p 變成 false → 模擬跑到那個時間點就能抓到。</p>
+  <p>Liveness 被違反 → p <em>永遠不成立</em>，這需要模擬無限長的時間才能確認！模擬再長也無法保證「未來某天 p 一定會出現」。</p>
+  <div class="card-warn"><p>Liveness 違反 = 找到一個 Lasso（有環的執行路徑），且環上所有狀態都滿足 ¬p。因為有環就代表系統可以永遠在那個 loop 裡轉，p 永遠不成立。有限狀態系統中，「無限執行」一定包含一個環。</p></div>
+  <div class="card-ok"><p>90% 硬體性質都是 Safety 的原因：Safety 反例有限長、能被模擬抓到、工具驗證更快。Liveness 性質更難，通常在設計高層確認（如協議本身保證不死鎖）。</p></div>
+</div>
+
+<!-- ④ Explicit vs Symbolic -->
+<div class="slide" id="s3">
+  <h2>④ Explicit vs Symbolic — 為什麼 Symbolic 能贏？</h2>
+  <div class="why">核心問題：狀態太多，明明記憶體放不下，Symbolic 為什麼能繞過這個問題？</div>
+  <p style="font-weight:600">先感受 State Explosion 有多嚴重</p>
+  <div class="ctrl">
+    <span style="font-size:13px;color:var(--text2)">暫存器位元數：</span>
+    <input type="range" min="1" max="32" value="10" step="1" id="bit-slider" oninput="updateBits(this.value)" style="width:200px">
+    <span id="bit-label" style="font-size:13px;font-weight:600;min-width:150px">10 bits → 1,024 狀態</span>
+  </div>
+  <svg class="demo" viewBox="0 0 640 180" id="exp-svg">
+    <rect id="exp-bar" x="40" y="40" width="0" height="44" rx="4" fill="#185fa5" opacity=".75"/>
+    <rect x="40" y="104" width="120" height="44" rx="4" fill="#1d9e75" opacity=".75"/>
+    <text x="30" y="68" text-anchor="end" font-size="12" fill="#0c447c" font-weight="600">Explicit</text>
+    <text x="30" y="132" text-anchor="end" font-size="12" fill="#085041" font-weight="600">Symbolic</text>
+    <text id="exp-e-label" x="45" y="68" font-size="11" fill="#0c447c"></text>
+    <text x="165" y="132" font-size="11" fill="#085041">BDD 大小 ≈ O(n) ~ O(n²)</text>
+    <line x1="40" y1="165" x2="620" y2="165" stroke="#d3d1c7" stroke-width=".5"/>
+    <text x="330" y="178" text-anchor="middle" font-size="10" fill="#8a8880">記憶體使用量（相對）</text>
+  </svg>
+  <p style="font-weight:600">Symbolic 的根本原理：把「一批狀態」包成一個數學物件</p>
+  <p>Explicit 方法把每個狀態都存成一筆記錄，100 萬個狀態就要 100 萬筆。Symbolic 方法則用一個 Boolean function 表示整批狀態：</p>
+  <div class="formula">Reached = {s₀, s₁, s₃, s₇, ...} → 用一個 BDD（Boolean function）表示整個集合</div>
+  <svg class="demo" viewBox="0 0 640 155">
+    <defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+    <text x="160" y="22" text-anchor="middle" font-size="13" fill="#0c447c" font-weight="600">Explicit</text>
+    <rect x="20" y="34" width="44" height="22" rx="4" fill="#b5d4f4" stroke="#185fa5" stroke-width=".5"/><text x="42" y="49" text-anchor="middle" font-size="10" fill="#0c447c">s₀</text>
+    <rect x="70" y="34" width="44" height="22" rx="4" fill="#b5d4f4" stroke="#185fa5" stroke-width=".5"/><text x="92" y="49" text-anchor="middle" font-size="10" fill="#0c447c">s₁</text>
+    <rect x="120" y="34" width="44" height="22" rx="4" fill="#b5d4f4" stroke="#185fa5" stroke-width=".5"/><text x="142" y="49" text-anchor="middle" font-size="10" fill="#0c447c">s₂</text>
+    <rect x="170" y="34" width="44" height="22" rx="4" fill="#b5d4f4" stroke="#185fa5" stroke-width=".5"/><text x="192" y="49" text-anchor="middle" font-size="10" fill="#0c447c">s₃</text>
+    <text x="230" y="49" font-size="13" fill="#8a8880">⋯</text>
+    <text x="160" y="75" text-anchor="middle" font-size="11" fill="#8a8880">每個狀態各占一塊記憶體</text>
+    <text x="160" y="90" text-anchor="middle" font-size="11" fill="#a32d2d">2ⁿ 筆 → 指數爆炸</text>
+    <text x="310" y="70" text-anchor="middle" font-size="20" fill="#8a8880">→</text>
+    <text x="490" y="22" text-anchor="middle" font-size="13" fill="#085041" font-weight="600">Symbolic (BDD)</text>
+    <rect x="390" y="34" width="200" height="80" rx="8" fill="#e1f5ee" stroke="#0f6e56" stroke-width="1"/>
+    <text x="490" y="62" text-anchor="middle" font-size="13" fill="#085041" font-weight="600">f(x₁,x₂,...,xₙ) = 1</text>
+    <text x="490" y="82" text-anchor="middle" font-size="11" fill="#0f6e56">只要 x 代入的值對應</text>
+    <text x="490" y="98" text-anchor="middle" font-size="11" fill="#0f6e56">某個可達狀態就為 True</text>
+    <text x="490" y="127" text-anchor="middle" font-size="11" fill="#085041" font-weight="600">1 個 BDD = 整個狀態集合</text>
+    <text x="490" y="143" text-anchor="middle" font-size="11" fill="#1d9e75">大小 ≈ O(n) ~ O(n²)</text>
+  </svg>
+  <div class="grid2">
+    <div class="card">
+      <p style="font-weight:600;margin-bottom:.3rem">Symbolic 的核心操作：Image computation</p>
+      <p style="font-size:13px;color:var(--text2)">從當前可達狀態集合，一步計算所有下一步可達的狀態集合——用 BDD 的 AND/OR/量詞消去完成，一次操作整批狀態。</p>
+    </div>
+    <div class="card">
+      <p style="font-weight:600;margin-bottom:.3rem">Symbolic 的限制</p>
+      <p style="font-size:13px;color:var(--text2)">BDD 大小仍取決於 variable ordering 與電路結構。乘法器等算術電路的 BDD 仍是指數大，這時需要 SAT-based 方法。</p>
+    </div>
+  </div>
+  <div class="card-ok"><p>一句話記住 Symbolic 精髓：Explicit 是「一個一個數格子」，Symbolic 是「用一條數學式描述所有格子」。BDD 讓這條數學式的操作（AND、OR、∃x 消去）都能高效完成。</p></div>
+</div>
+
+</div><!-- end content -->
+
+<script>
+const slides=document.querySelectorAll('.slide');
+const tabs=document.querySelectorAll('.tab');
+function go(n){
+  slides.forEach((s,i)=>s.classList.toggle('on',i===n));
+  tabs.forEach((t,i)=>t.classList.toggle('on',i===n));
+  if(n===1)showEx('agefp');
+  if(n===2)showSL('safe');
+  if(n===3)updateBits(10);
+}
+
+// ② CTL examples
+const ctlExamples={
+  agefp:{formula:'AG(EF p)',meaning:'從任何狀態出發，都能到達某個 p 成立的狀態',
+    explain:'<b>AG</b>：對計算樹中<em>所有狀態</em>（G），沿<em>所有路徑</em>（A）。<b>EF p</b>：存在某條路徑（E）使得未來某時點（F）p 成立。<br><br>直覺：「無論系統走到哪裡，都還能找到一條出路讓 p 再次出現。」<br>範例：<code>AG(EF Restart) ≣ 無死鎖</code>——從任何狀態都能回到 Restart 狀態。',
+    nodes:[{x:320,y:55,r:22,fill:'#e6f1fb',stroke:'#185fa5',label:'s₀',sub:'p✓',hi:true},{x:220,y:120,r:20,fill:'#e6f1fb',stroke:'#185fa5',label:'s₁',sub:'',hi:false},{x:420,y:120,r:20,fill:'#e6f1fb',stroke:'#185fa5',label:'s₂',sub:'',hi:false},{x:175,y:185,r:18,fill:'#e1f5ee',stroke:'#1d9e75',label:'p',sub:'',hi:true},{x:265,y:185,r:18,fill:'#e1f5ee',stroke:'#1d9e75',label:'p',sub:'',hi:true},{x:370,y:185,r:18,fill:'#e1f5ee',stroke:'#1d9e75',label:'p',sub:'',hi:true},{x:465,y:185,r:18,fill:'#e1f5ee',stroke:'#1d9e75',label:'p',sub:'',hi:true}],
+    edges:[[0,1],[0,2],[1,3],[1,4],[2,5],[2,6]]},
+  agafp:{formula:'AG(AF p)',meaning:'從任何狀態出發，沿所有路徑 p 一定會出現（p 無限次出現）',
+    explain:'<b>AG</b>：對所有狀態、所有路徑。<b>AF p</b>：沿<em>所有路徑</em>（A）未來某時點（F）p 成立。<br><br>直覺：「計算樹中畫一條水平切線，切線上每個節點都是 p。」更強——不只是「可以到達 p」，而是「所有路徑都一定會經過 p」。<br><br><b>AG(EF p) ≠ AG(AF p)</b>：存在系統讓前者成立但後者不成立！（有某條路徑永遠繞開 p）',
+    nodes:[{x:320,y:45,r:22,fill:'#e6f1fb',stroke:'#185fa5',label:'s₀',sub:'p',hi:true},{x:220,y:115,r:20,fill:'#faeeda',stroke:'#854f0b',label:'s₁',sub:'¬p',hi:false},{x:420,y:115,r:20,fill:'#faeeda',stroke:'#854f0b',label:'s₂',sub:'¬p',hi:false},{x:175,y:180,r:18,fill:'#e1f5ee',stroke:'#1d9e75',label:'p',sub:'',hi:true},{x:265,y:180,r:18,fill:'#e1f5ee',stroke:'#1d9e75',label:'p',sub:'',hi:true},{x:370,y:180,r:18,fill:'#e1f5ee',stroke:'#1d9e75',label:'p',sub:'',hi:true},{x:465,y:180,r:18,fill:'#e1f5ee',stroke:'#1d9e75',label:'p',sub:'',hi:true}],
+    edges:[[0,1],[0,2],[1,3],[1,4],[2,5],[2,6]]},
+  efgp:{formula:'EF(G p)',meaning:'存在某條路徑，從某時點開始 p 永遠成立',
+    explain:'<b>E</b>：只需存在一條路徑。<b>F</b>：從某個未來時點開始。<b>G p</b>：從那時點起 p 永遠成立。<br><br>直覺：「系統能進入一個 p 永遠成立的穩定模式。」這是個很弱的性質——只需要存在一條能穩定在 p 的路徑就夠了。',
+    nodes:[{x:320,y:45,r:22,fill:'#e6f1fb',stroke:'#185fa5',label:'s₀',sub:'',hi:false},{x:220,y:115,r:20,fill:'#faeeda',stroke:'#854f0b',label:'¬p',sub:'',hi:false},{x:420,y:115,r:20,fill:'#e1f5ee',stroke:'#1d9e75',label:'p',sub:'',hi:true},{x:175,y:180,r:18,fill:'#faeeda',stroke:'#854f0b',label:'¬p',sub:'',hi:false},{x:265,y:180,r:18,fill:'#faeeda',stroke:'#854f0b',label:'¬p',sub:'',hi:false},{x:375,y:180,r:18,fill:'#e1f5ee',stroke:'#1d9e75',label:'p',sub:'',hi:true},{x:465,y:180,r:18,fill:'#e1f5ee',stroke:'#1d9e75',label:'p',sub:'',hi:true}],
+    edges:[[0,1],[0,2],[1,3],[1,4],[2,5],[2,6]]},
+  agpq:{formula:'AG(p ⇒ EF q)',meaning:'只要 p 成立，就存在某條路徑讓 q 最終出現',
+    explain:'<b>AG</b>：對所有狀態。<b>p ⇒ EF q</b>：若此狀態 p 成立，則存在路徑（E）讓 q 最終出現（F）。<br><br>直覺：「只要進入 p 狀態，系統保證有能力到達 q。」常用於驗證協議，例如：<code>AG(req ⇒ EF ack)</code>——只要有 request，就一定能到達 ack 狀態（注意：不代表一定會到，只是「有能力」到達）。',
+    nodes:[{x:320,y:45,r:22,fill:'#eeedfe',stroke:'#534ab7',label:'p',sub:'→EFq',hi:true},{x:220,y:115,r:20,fill:'#faeeda',stroke:'#854f0b',label:'¬p',sub:'',hi:false},{x:420,y:115,r:20,fill:'#eeedfe',stroke:'#534ab7',label:'p',sub:'',hi:true},{x:175,y:180,r:18,fill:'#faeeda',stroke:'#854f0b',label:'¬p',sub:'',hi:false},{x:265,y:180,r:18,fill:'#e1f5ee',stroke:'#1d9e75',label:'q',sub:'',hi:true},{x:375,y:180,r:18,fill:'#faeeda',stroke:'#854f0b',label:'¬q',sub:'',hi:false},{x:465,y:180,r:18,fill:'#e1f5ee',stroke:'#1d9e75',label:'q',sub:'',hi:true}],
+    edges:[[0,1],[0,2],[1,3],[1,4],[2,5],[2,6]]}
+};
+function showEx(key){
+  document.querySelectorAll('#s1 .btn').forEach(b=>b.classList.remove('on'));
+  document.getElementById('ex-'+key).classList.add('on');
+  const ex=ctlExamples[key];
+  const g=document.getElementById('ctl-tree');g.innerHTML='';
+  let html='';const ns=ex.nodes;
+  ex.edges.forEach(([a,b])=>{
+    const dx=ns[b].x-ns[a].x,dy=ns[b].y-ns[a].y,len=Math.sqrt(dx*dx+dy*dy);
+    const ux=dx/len,uy=dy/len;
+    html+=`<line x1="${ns[a].x+ux*ns[a].r}" y1="${ns[a].y+uy*ns[a].r}" x2="${ns[b].x-ux*ns[b].r}" y2="${ns[b].y-uy*ns[b].r}" stroke="${ns[b].hi?'#1d9e75':'#8a8880'}" stroke-width="1" marker-end="url(#ar)"/>`;
+  });
+  ns.forEach((n,i)=>{
+    html+=`<circle cx="${n.x}" cy="${n.y}" r="${n.r}" fill="${n.fill}" stroke="${n.stroke}" stroke-width="${n.hi?2:1}" style="animation:pop .35s ${i*0.07}s both"/>`;
+    html+=`<text x="${n.x}" y="${n.y+(n.sub?-4:4)}" text-anchor="middle" font-size="${n.r>19?12:10}" fill="${n.stroke}" font-weight="600" style="animation:pop .35s ${i*0.07}s both">${n.label}</text>`;
+    if(n.sub)html+=`<text x="${n.x}" y="${n.y+10}" text-anchor="middle" font-size="9" fill="${n.stroke}" style="animation:pop .35s ${i*0.07}s both">${n.sub}</text>`;
+  });
+  g.innerHTML=html;
+  document.getElementById('ctl-formula').textContent=ex.formula;
+  document.getElementById('ctl-meaning').textContent=ex.meaning;
+  document.getElementById('ctl-explain').innerHTML=ex.explain;
+}
+
+// ③ Safety vs Liveness
+function showSL(mode){
+  ['safe','live','cmp'].forEach(k=>document.getElementById('btn-'+k).classList.remove('on'));
+  document.getElementById('btn-'+mode).classList.add('on');
+  const g=document.getElementById('sl-g');g.innerHTML='';
+  const mk='<defs><marker id="ar2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="arR" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#e24b4a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>';
+  let h='',e='';
+  if(mode==='safe'){
+    h=mk+'<text x="320" y="22" text-anchor="middle" font-size="14" fill="#0c447c" font-weight="600">Safety 反例 — 有限長度的執行路徑</text>';
+    const xs=[60,140,220,300,380,460];
+    xs.forEach((x,i)=>{const bad=i===4;h+=`<circle cx="${x}" cy="100" r="26" fill="${bad?'#fcebeb':'#e1f5ee'}" stroke="${bad?'#e24b4a':'#1d9e75'}" stroke-width="${bad?2:1.2}" style="animation:pop .35s ${i*.1}s both"/>`;h+=`<text x="${x}" y="${bad?95:97}" text-anchor="middle" font-size="${bad?13:12}" fill="${bad?'#a32d2d':'#085041'}" font-weight="600" style="animation:pop .35s ${i*.1}s both">${bad?'¬p':'p'}</text>`;if(bad)h+=`<text x="${x}" y="112" text-anchor="middle" font-size="10" fill="#e24b4a">違反！</text>`;if(i<xs.length-1)h+=`<line x1="${x+26}" y1="100" x2="${xs[i+1]-26}" y2="100" stroke="${i===3?'#e24b4a':'#1d9e75'}" stroke-width="1.2" marker-end="${i===3?'url(#arR)':'url(#ar2)'}"/>`;});
+    h+='<text x="320" y="158" text-anchor="middle" font-size="12" fill="#8a8880">有限長反例 → 模擬可以抓到 ✓</text>';
+    h+='<text x="320" y="178" text-anchor="middle" font-size="12" fill="#1d9e75">assert_always(p) ≣ AG(p) ≣ ¬EF(¬p)</text>';
+    e='<b>Safety 反例</b>：某個有限長的執行路徑上，某個時間點 p 變成 false。<br>驗證方式：找出所有可達狀態，看有沒有狀態滿足 ¬p。<br>等價：<code>AG p = ¬EF ¬p</code>——若不存在任何可達的 ¬p 狀態，性質就成立。';
+  }
+  if(mode==='live'){
+    h=mk+'<text x="320" y="22" text-anchor="middle" font-size="14" fill="#a32d2d" font-weight="600">Liveness 反例 — Lasso（帶環的無限執行）</text>';
+    const stem=[60,130,200];
+    stem.forEach((x,i)=>{h+=`<circle cx="${x}" cy="110" r="22" fill="#faeeda" stroke="#854f0b" stroke-width="1.2"/>`;h+=`<text x="${x}" y="114" text-anchor="middle" font-size="11" fill="#633806" font-weight="600">¬p</text>`;if(i<stem.length-1)h+=`<line x1="${x+22}" y1="110" x2="${stem[i+1]-22}" y2="110" stroke="#854f0b" stroke-width="1.2" marker-end="url(#ar2)"/>`;});
+    h+=`<line x1="222" y1="110" x2="262" y2="110" stroke="#e24b4a" stroke-width="1.5" marker-end="url(#arR)"/>`;
+    const lp=[288,358,428,498];
+    lp.forEach((x,i)=>{h+=`<circle cx="${x}" cy="110" r="22" fill="#fcebeb" stroke="#e24b4a" stroke-width="1.5"/>`;h+=`<text x="${x}" y="114" text-anchor="middle" font-size="11" fill="#a32d2d" font-weight="600">¬p</text>`;if(i<lp.length-1)h+=`<line x1="${x+22}" y1="110" x2="${lp[i+1]-22}" y2="110" stroke="#e24b4a" stroke-width="1.5" marker-end="url(#arR)"/>`;});
+    h+=`<path d="M498 88 Q498 50 393 50 Q288 50 288 88" fill="none" stroke="#e24b4a" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#arR)"/>`;
+    h+='<text x="393" y="42" text-anchor="middle" font-size="11" fill="#a32d2d" font-weight="600">永遠循環 → p 從不出現</text>';
+    h+='<text x="320" y="160" text-anchor="middle" font-size="11" fill="#8a8880">模擬：跑多長都看不到 p，但無法確認「未來永遠不會出現」</text>';
+    h+='<text x="320" y="178" text-anchor="middle" font-size="11" fill="#a32d2d">只有形式化方法才能找到 Lasso，證明 p 永遠不出現 ✓</text>';
+    e='<b>Liveness 反例</b>：帶環的 Lasso 路徑，環上所有狀態都滿足 ¬p。<br>這代表系統可以無限次在那個 loop 裡循環，p 永遠不出現。<br>驗證：找 <code>EG(¬p)</code> 的 witness——有限狀態系統中，「無限 ¬p」等於「找到 ¬p 的環」。';
+  }
+  if(mode==='cmp'){
+    h=mk+'<text x="160" y="22" text-anchor="middle" font-size="13" fill="#085041" font-weight="600">Safety AG p</text><text x="480" y="22" text-anchor="middle" font-size="13" fill="#a32d2d" font-weight="600">Liveness AF p</text>';
+    const sl=[50,105,160,215];sl.forEach((x,i)=>{h+=`<circle cx="${x}" cy="90" r="18" fill="#e1f5ee" stroke="#1d9e75" stroke-width="1.2"/><text x="${x}" y="94" text-anchor="middle" font-size="10" fill="#085041" font-weight="600">p</text>`;if(i<sl.length-1)h+=`<line x1="${x+18}" y1="90" x2="${sl[i+1]-18}" y2="90" stroke="#1d9e75" stroke-width="1" marker-end="url(#ar2)"/>`;});
+    h+='<text x="160" y="125" text-anchor="middle" font-size="11" fill="#085041">反例：有限路徑</text><text x="160" y="142" text-anchor="middle" font-size="11" fill="#1d9e75">模擬可以驗證 ✓</text>';
+    const ll=[330,385,440];ll.forEach((x,i)=>{h+=`<circle cx="${x}" cy="90" r="18" fill="#faeeda" stroke="#854f0b" stroke-width="1.2"/><text x="${x}" y="94" text-anchor="middle" font-size="10" fill="#633806" font-weight="600">¬p</text>`;if(i<ll.length-1)h+=`<line x1="${x+18}" y1="90" x2="${ll[i+1]-18}" y2="90" stroke="#854f0b" stroke-width="1" marker-end="url(#ar2)"/>`;});
+    h+=`<line x1="458" y1="90" x2="498" y2="90" stroke="#e24b4a" stroke-width="1.5" marker-end="url(#arR)"/>`;
+    const lr=[522,576];lr.forEach((x,i)=>{h+=`<circle cx="${x}" cy="90" r="18" fill="#fcebeb" stroke="#e24b4a" stroke-width="1.5"/><text x="${x}" y="94" text-anchor="middle" font-size="10" fill="#a32d2d" font-weight="600">¬p</text>`;if(i<lr.length-1)h+=`<line x1="${x+18}" y1="90" x2="${lr[i+1]-18}" y2="90" stroke="#e24b4a" stroke-width="1.5" marker-end="url(#arR)"/>`;});
+    h+=`<path d="M594 72 Q594 50 558 50 Q522 50 522 72" fill="none" stroke="#e24b4a" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arR)"/>`;
+    h+='<text x="480" y="125" text-anchor="middle" font-size="11" fill="#a32d2d">反例：帶環 Lasso</text><text x="480" y="142" text-anchor="middle" font-size="11" fill="#a32d2d">模擬無法驗證 ✗</text>';
+    e='<b>關鍵差異</b>：Safety 反例是有限長的壞路徑，可被模擬捕捉。Liveness 反例是帶環的無限路徑（Lasso），模擬永遠跑不完。<br>這是工業界 90% 性質用 Safety 的根本原因——驗證代價更低、工具支援更好。';
+  }
+  g.innerHTML=h;
+  document.getElementById('sl-exp').innerHTML=e;
+}
+
+// ④ Bits slider
+function updateBits(n){
+  n=parseInt(n);const st=Math.pow(2,n);
+  let label;
+  if(st>1e9)label=`${n} bits → ${(st/1e9).toFixed(1)}B 狀態`;
+  else if(st>1e6)label=`${n} bits → ${(st/1e6).toFixed(1)}M 狀態`;
+  else if(st>1e3)label=`${n} bits → ${(st/1e3).toFixed(1)}K 狀態`;
+  else label=`${n} bits → ${st} 狀態`;
+  document.getElementById('bit-label').textContent=label;
+  const maxW=500;const ratio=Math.min(n/32,1);const bw=Math.max(4,ratio*maxW);
+  const bar=document.getElementById('exp-bar');bar.setAttribute('width',bw);
+  const color=n<12?'#185fa5':n<20?'#ba7517':'#e24b4a';bar.setAttribute('fill',color);
+  const lbl=document.getElementById('exp-e-label');
+  lbl.textContent=n>20?'記憶體爆炸！':'可接受';lbl.setAttribute('x',bw>80?bw+45:45+bw);lbl.setAttribute('fill',color);
+}
+showEx('agefp');
+showSL('safe');
+updateBits(10);
+</script>
+</body>
+</html>
